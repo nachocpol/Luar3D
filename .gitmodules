@@ -1,0 +1,3 @@
+[submodule "external/premake5/emscripten"]
+	path = external/premake5/emscripten
+	url = https://github.com/tritao/premake-emscripten.git
