@@ -20,6 +20,8 @@ project "App"
     language "C++"
     targetdir "../build/%{cfg.platform}/%{cfg.buildcfg}"   
     files { "../src/**.h", "../src/**.cpp" }
-    warnings "Everything"
+    includedirs {"../external/glfw-3.4.bin.WIN64/include"}
+    warnings "Default"
     flags {"FatalWarnings"}
-    links {"d3d12", "dxgi", "dxguid"}
+    libdirs{"../external/glfw-3.4.bin.WIN64/lib-vc2022"}
+    links {"d3d12", "dxgi", "dxguid", "glfw3"}
