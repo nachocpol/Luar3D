@@ -10,14 +10,16 @@ workspace "Luar3D"
 
     filter {"configurations:Debug"}
         optimize "Off"
+        defines {"DEBUG"}
 
     filter {"configurations:Release"}
         optimize "On"
 
-project "TestApp"
+project "App"
     kind "ConsoleApp"
     language "C++"
     targetdir "../build/%{cfg.platform}/%{cfg.buildcfg}"   
     files { "../src/**.h", "../src/**.cpp" }
     warnings "Everything"
     flags {"FatalWarnings"}
+    links {"d3d12", "dxgi", "dxguid"}
