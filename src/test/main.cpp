@@ -11,6 +11,9 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include "GLFW/glfw3native.h"
 
+#include "world/world.h"
+#include "world/scene.h"
+
 using namespace Microsoft::WRL;
 
 static const uint8_t s_BackBufferCount = 2;
@@ -166,9 +169,14 @@ int main()
 
     HWND rawWindow = glfwGetWin32Window(window);
 
+    World& world = World::Get();
+    Scene* pMainScene = world.CreateScene();
+
     while (true)
     {
         glfwPollEvents();
+
+        world.Update();
     }
 
 
