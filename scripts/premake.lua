@@ -19,7 +19,7 @@ project "app"
     kind "ConsoleApp"
     language "C++"
     targetdir "../build/%{cfg.platform}/%{cfg.buildcfg}"   
-    files { "../src/**.h", "../src/**.cpp" }
+    files { "../src/test/**.h", "../src/test/**.cpp" }
     includedirs 
     {
         "../src/",
@@ -28,7 +28,7 @@ project "app"
     warnings "Default"
     flags {"FatalWarnings"}
     libdirs{"../external/glfw-3.4.bin.WIN64/lib-vc2022"}
-    links {"d3d12", "dxgi", "dxguid", "glfw3", "world"}
+    links {"d3d12", "dxgi", "dxguid", "glfw3", "world", "renderer"}
 
 project "world"
     kind "StaticLib"
@@ -36,5 +36,14 @@ project "world"
     targetdir "../build/%{cfg.platform}/%{cfg.buildcfg}"   
     files {"../src/world/**.cpp", "../src/world/**.h"}
     includedirs {"../src/world"}
+    warnings "Default"
+    flags {"FatalWarnings"}
+
+project "renderer"
+    kind "StaticLib"
+    language "C++"
+    targetdir "../build/%{cfg.platform}/%{cfg.buildcfg}"   
+    files {"../src/renderer/**.cpp", "../src/renderer/**.h"}
+    includedirs {"../src/renderer"}
     warnings "Default"
     flags {"FatalWarnings"}
