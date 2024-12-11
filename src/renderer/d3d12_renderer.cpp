@@ -3,9 +3,8 @@
 #include <iostream>
 #include <string.h>
 
-using namespace Microsoft::WRL;
-
 D3D12Renderer::D3D12Renderer()
+    : m_CurrentBackBufferIndex(0)
 {
 }
 
@@ -128,3 +127,89 @@ bool D3D12Renderer::Init()
     return true;
 }
 #pragma warning(pop)
+
+void D3D12Renderer::OnWindowChange(void* pPlatformWindow, uint32_t width, uint32_t height)
+{
+    if (m_WindowResources.m_SwapChain)
+    {
+        // TODO: Resize swap chain
+    }
+    else
+    {
+        DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+        swapChainDesc.BufferCount = s_BackBufferCount;
+        swapChainDesc.Width = width;
+        swapChainDesc.Height = height;
+        swapChainDesc.SampleDesc.Count = 1;
+        swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        swapChainDesc.Stereo = FALSE;
+        swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+        swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+
+        DXGI_SWAP_CHAIN_FULLSCREEN_DESC fullScreenDesc = {};
+        fullScreenDesc.Windowed = TRUE;
+
+        ComPtr<IDXGISwapChain1> tempSwapChain;
+        HRESULT res = m_Factory->CreateSwapChainForHwnd(
+            m_Queue.Get(), (HWND)pPlatformWindow, &swapChainDesc, &fullScreenDesc,
+            nullptr, tempSwapChain.GetAddressOf()
+        );
+
+        tempSwapChain.CopyTo(m_WindowResources.m_SwapChain.GetAddressOf());
+        
+
+        if (res != S_OK)
+        {
+            return;
+        }
+
+        //ThrowIfFailed(m_dxgiFactory->MakeWindowAssociation(m_window, DXGI_MWA_NO_ALT_ENTER));
+    }
+
+    D3D12_RENDER_TARGET_VIEW_DESC rtViewDesc = {};
+    rtViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    rtViewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+
+    for (int i = 0; i < s_BackBufferCount; ++i)
+    {
+        m_WindowResources.m_SwapChain->GetBuffer(i, IID_PPV_ARGS(m_WindowResources.m_BackBuffers[i].GetAddressOf()));
+
+        // Ehmmm. Ok
+        D3D12_CPU_DESCRIPTOR_HANDLE destHandle{};
+        destHandle.ptr = m_RTVHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) * i;
+
+        m_Device->CreateRenderTargetView(m_WindowResources.m_BackBuffers[i].Get(), &rtViewDesc, destHandle);
+        m_WindowResources.m_BackBufferView[i] = destHandle;
+    }
+
+    m_CurrentBackBufferIndex = m_WindowResources.m_SwapChain->GetCurrentBackBufferIndex();
+
+    // Depth buffer...
+
+}
+
+void D3D12Renderer::NewFrame()
+{
+    m_CommandAllocators[m_CurrentBackBufferIndex]->Reset();
+    m_CommandList->Reset(m_CommandAllocators[m_CurrentBackBufferIndex].Get(), nullptr);
+
+    float clear[4] = { 1,0,1,1 };
+    m_CommandList->ClearRenderTargetView(
+        m_WindowResources.m_BackBufferView[m_CurrentBackBufferIndex], clear, 0, nullptr
+    );
+}
+
+void D3D12Renderer::Present()
+{
+    m_CommandList->Close();
+
+    ID3D12CommandList* pCommandList[1] = { (ID3D12CommandList*)m_CommandList.Get() };
+    m_Queue->ExecuteCommandLists(1, pCommandList);
+    
+    // Fences etc.
+    m_WindowResources.m_SwapChain->Present(1, 0);
+
+    m_CurrentBackBufferIndex = m_WindowResources.m_SwapChain->GetCurrentBackBufferIndex();
+}

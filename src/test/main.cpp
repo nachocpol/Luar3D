@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include <Windows.h>
+
 #include "GLFW/glfw3.h"
 
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -13,6 +15,7 @@
 int main()
 {
     Renderer::Create(RenderBackend::D3D12).Init();
+    Renderer& renderer = Renderer::Get();
 
     // Init GLFW and create a window (withou an API so we can use it as a generic window)
     if (glfwInit() != GLFW_TRUE)
@@ -26,7 +29,8 @@ int main()
         return 1;
     }
 
-    HWND rawWindow = glfwGetWin32Window(window);
+    // Let the renderer know we have a window
+    renderer.OnWindowChange(glfwGetWin32Window(window), 1280, 720);
 
     World& world = World::Get();
     Scene* pMainScene = world.CreateScene();
@@ -34,8 +38,11 @@ int main()
     while (true)
     {
         glfwPollEvents();
-
+        renderer.NewFrame();
         world.Update();
+        renderer.Present();
+
+        Sleep(40); // hackkk
     }
 
     glfwTerminate();

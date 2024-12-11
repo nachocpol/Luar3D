@@ -22,6 +22,12 @@ public:
 	static Renderer& Get();
 
 	virtual bool Init() = 0;
+
+	virtual void OnWindowChange(void* pPlatformWindow, uint32_t width, uint32_t height) = 0;
+
+	virtual void NewFrame() = 0;
+
+	virtual void Present() = 0;
 };
 
 #endif

@@ -11,6 +11,16 @@
 
 static const uint8_t s_BackBufferCount = 2;
 
+using namespace Microsoft::WRL;
+
+struct WindowResources
+{
+	ComPtr<IDXGISwapChain3> m_SwapChain;
+	ComPtr<ID3D12Resource> m_BackBuffers[s_BackBufferCount];
+	D3D12_CPU_DESCRIPTOR_HANDLE m_BackBufferView[s_BackBufferCount];
+
+};
+
 class D3D12Renderer : Renderer
 {
 private:
@@ -21,19 +31,26 @@ private:
 
 public:
 	bool Init();
+	void OnWindowChange(void* pPlatformWindow, uint32_t width, uint32_t height);
+	void NewFrame();
+	void Present();
 
 private:
-	Microsoft::WRL::ComPtr<IDXGIFactory6> m_Factory;
-	Microsoft::WRL::ComPtr<IDXGIAdapter4> m_GPU;
-	Microsoft::WRL::ComPtr<ID3D12Device8> m_Device;
+	ComPtr<IDXGIFactory6> m_Factory;
+	ComPtr<IDXGIAdapter4> m_GPU;
+	ComPtr<ID3D12Device8> m_Device;
 
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_Queue;
+	ComPtr<ID3D12CommandQueue> m_Queue;
 
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_DSVHeap;
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_RTVHeap;
+	ComPtr<ID3D12DescriptorHeap> m_DSVHeap;
+	ComPtr<ID3D12DescriptorHeap> m_RTVHeap;
 
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_CommandAllocators[s_BackBufferCount];
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> m_CommandList;
+	ComPtr<ID3D12CommandAllocator> m_CommandAllocators[s_BackBufferCount];
+	ComPtr<ID3D12GraphicsCommandList6> m_CommandList;
+
+	WindowResources m_WindowResources;
+
+	uint8_t m_CurrentBackBufferIndex;
 };
 
 #endif
