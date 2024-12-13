@@ -41,8 +41,6 @@ int main()
         renderer.NewFrame();
         world.Update();
         renderer.Present();
-
-        Sleep(40); // hackkk
     }
 
     glfwTerminate();

@@ -1,5 +1,7 @@
 #include "d3d12_renderer.h"
 
+#include "directx/d3dx12_barriers.h"
+
 #include <iostream>
 #include <string.h>
 
@@ -113,6 +115,9 @@ bool D3D12Renderer::Init()
         {
             return false;
         }
+
+        m_PresentFenceValues[i] = 0u;
+        m_Device->CreateFence(0u, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_PresentFences[i]));
     }
 
     if (m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_CommandAllocators[0].Get(), nullptr, IID_PPV_ARGS(&m_CommandList)) != S_OK)
@@ -121,8 +126,6 @@ bool D3D12Renderer::Init()
     }
     m_CommandList->Close();
 
-
-    // TODO: Fence    
 
     return true;
 }
@@ -144,7 +147,7 @@ void D3D12Renderer::OnWindowChange(void* pPlatformWindow, uint32_t width, uint32
         swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
         swapChainDesc.Stereo = FALSE;
         swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        swapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER;
         swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
         swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
 
@@ -187,13 +190,26 @@ void D3D12Renderer::OnWindowChange(void* pPlatformWindow, uint32_t width, uint32
     m_CurrentBackBufferIndex = m_WindowResources.m_SwapChain->GetCurrentBackBufferIndex();
 
     // Depth buffer...
-
 }
 
 void D3D12Renderer::NewFrame()
 {
+    while (m_PresentFences[m_CurrentBackBufferIndex]->GetCompletedValue() < m_PresentFenceValues[m_CurrentBackBufferIndex])
+    {
+        // Wait...
+    }
+
     m_CommandAllocators[m_CurrentBackBufferIndex]->Reset();
     m_CommandList->Reset(m_CommandAllocators[m_CurrentBackBufferIndex].Get(), nullptr);
+
+    // TODO: Works.. But not nice, need to track states
+    if (m_PresentFences[m_CurrentBackBufferIndex] != 0)
+    {
+        m_CommandList->ResourceBarrier( 1, 
+            &CD3DX12_RESOURCE_BARRIER::Transition(
+                m_WindowResources.m_BackBuffers[m_CurrentBackBufferIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET
+        ));
+    }
 
     float clear[4] = { 1,0,1,1 };
     m_CommandList->ClearRenderTargetView(
@@ -203,12 +219,19 @@ void D3D12Renderer::NewFrame()
 
 void D3D12Renderer::Present()
 {
+    m_CommandList->ResourceBarrier(1,
+        &CD3DX12_RESOURCE_BARRIER::Transition(
+            m_WindowResources.m_BackBuffers[m_CurrentBackBufferIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT
+    ));
+
     m_CommandList->Close();
 
     ID3D12CommandList* pCommandList[1] = { (ID3D12CommandList*)m_CommandList.Get() };
-    m_Queue->ExecuteCommandLists(1, pCommandList);
-    
-    // Fences etc.
+    m_Queue->ExecuteCommandLists(1, pCommandList);    
+
+    ++m_PresentFenceValues[m_CurrentBackBufferIndex];
+    m_Queue->Signal(m_PresentFences[m_CurrentBackBufferIndex].Get(), m_PresentFenceValues[m_CurrentBackBufferIndex]);
+
     m_WindowResources.m_SwapChain->Present(1, 0);
 
     m_CurrentBackBufferIndex = m_WindowResources.m_SwapChain->GetCurrentBackBufferIndex();

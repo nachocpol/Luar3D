@@ -18,7 +18,6 @@ struct WindowResources
 	ComPtr<IDXGISwapChain3> m_SwapChain;
 	ComPtr<ID3D12Resource> m_BackBuffers[s_BackBufferCount];
 	D3D12_CPU_DESCRIPTOR_HANDLE m_BackBufferView[s_BackBufferCount];
-
 };
 
 class D3D12Renderer : Renderer
@@ -39,6 +38,9 @@ private:
 	ComPtr<IDXGIFactory6> m_Factory;
 	ComPtr<IDXGIAdapter4> m_GPU;
 	ComPtr<ID3D12Device8> m_Device;
+
+	ComPtr<ID3D12Fence> m_PresentFences[s_BackBufferCount];
+	uint64_t m_PresentFenceValues[s_BackBufferCount];
 
 	ComPtr<ID3D12CommandQueue> m_Queue;
 

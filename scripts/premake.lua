@@ -44,6 +44,9 @@ project "renderer"
     language "C++"
     targetdir "../build/%{cfg.platform}/%{cfg.buildcfg}"   
     files {"../src/renderer/**.cpp", "../src/renderer/**.h"}
-    includedirs {"../src/renderer"}
+    includedirs {
+        "../src/renderer",
+        "../external/directx_headers/include"
+    }
     warnings "Default"
     flags {"FatalWarnings"}

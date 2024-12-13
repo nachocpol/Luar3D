@@ -1,3 +1,6 @@
 [submodule "external/premake5/emscripten"]
 	path = external/premake5/emscripten
 	url = https://github.com/tritao/premake-emscripten.git
+[submodule "external/directx_headers"]
+	path = external/directx_headers
+	url = https://github.com/microsoft/DirectX-Headers.git
