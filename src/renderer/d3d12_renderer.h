@@ -53,6 +53,10 @@ private:
 	WindowResources m_WindowResources;
 
 	uint8_t m_CurrentBackBufferIndex;
+
+
+	ComPtr<ID3D12PipelineState> m_DebugPipeline;
+	ComPtr<ID3D12RootSignature> m_DebugRS;
 };
 
 #endif

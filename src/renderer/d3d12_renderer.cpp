@@ -1,6 +1,7 @@
 #include "d3d12_renderer.h"
 
 #include "directx/d3dx12_barriers.h"
+#include "directx/d3dx12_root_signature.h"
 
 #include <iostream>
 #include <string.h>
@@ -126,6 +127,31 @@ bool D3D12Renderer::Init()
     }
     m_CommandList->Close();
 
+
+    // Test PSO creation
+
+    ComPtr<ID3DBlob> rootSignatureBin;
+    ComPtr<ID3DBlob> errorBin;
+    if (D3D12SerializeRootSignature(
+        &CD3DX12_ROOT_SIGNATURE_DESC::CD3DX12_ROOT_SIGNATURE_DESC(), D3D_ROOT_SIGNATURE_VERSION_1,
+        rootSignatureBin.GetAddressOf(), errorBin.GetAddressOf()) == S_OK)
+    {
+        m_Device->CreateRootSignature(
+            0, rootSignatureBin->GetBufferPointer(), rootSignatureBin->GetBufferSize(), IID_PPV_ARGS(&m_DebugRS)
+        );
+        
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+        psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+        psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+        
+        psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+        psoDesc.NumRenderTargets = 1;
+        psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        
+        psoDesc.pRootSignature = m_DebugRS.Get();
+        
+        m_Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_DebugPipeline));
+    }
 
     return true;
 }
